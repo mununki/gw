@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -26,10 +27,17 @@ func main() {
 	}
 	defer watcher.Close()
 
+	var wg sync.WaitGroup
+
 	p := runTest()
 
-	done := make(chan bool)
+	defer p.Process.Kill()
+
+	wg.Add(1)
+
 	go func() {
+		defer wg.Done()
+
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -57,5 +65,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	<-done
+	wg.Wait()
 }
