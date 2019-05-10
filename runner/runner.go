@@ -2,17 +2,24 @@ package main
 
 import (
 	"log"
+	"os"
+	"sync"
 )
 
 func main() {
-	log.Println("I'm running...")
+	for _, arg := range os.Args {
+		log.Println(arg)
+	}
 
-	done := make(chan bool)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 
 	go func() {
+		defer wg.Done()
 		for {
 		}
 	}()
 
-	<-done
+	wg.Wait()
 }
