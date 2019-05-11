@@ -3,7 +3,9 @@ package main
 import (
 	"log"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 )
 
 func main() {
@@ -15,10 +17,14 @@ func main() {
 
 	wg.Add(1)
 
+	sigs := make(chan os.Signal, 1)
+
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
-		defer wg.Done()
-		for {
-		}
+		sig := <-sigs
+		log.Println(sig)
+		wg.Done()
 	}()
 
 	wg.Wait()

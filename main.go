@@ -4,53 +4,14 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"strings"
 	"sync"
 	"syscall"
 
 	"github.com/fsnotify/fsnotify"
 )
-
-// Command struct for commands
-type Command struct {
-	commands []string
-}
-
-// Run func to run commands
-func (c *Command) Run() *Process {
-	if len(c.commands) > 1 {
-		cmd := exec.Command(c.commands[1], c.commands[2:]...)
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Dir = "."
-		cmd.Start()
-
-		pgid, err := syscall.Getpgid(cmd.Process.Pid)
-		if err == nil {
-			return &Process{process: cmd, pgid: &pgid}
-		}
-
-		fmt.Println("can't get pgid")
-		os.Exit(0)
-		return nil
-	}
-
-	fmt.Println("need a command")
-	os.Exit(0)
-	return nil
-}
-
-// Process struct for process
-type Process struct {
-	process *exec.Cmd
-	pgid    *int
-}
-
-// Kill func to kill process and children process
-func (p *Process) Kill() {
-	syscall.Kill(-*p.pgid, 15)
-}
 
 func main() {
 	var wg sync.WaitGroup
@@ -64,28 +25,37 @@ func main() {
 
 	cmd := Command{commands: os.Args}
 	p := cmd.Run()
-	defer p.Kill()
+	fmt.Println("** Ctrl-C to exit **")
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		defer wg.Done()
+		<-sigs
+		fmt.Println(`Go Watcher terminated.`)
+		wg.Done()
+	}()
 
+	go func() {
 		for {
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {
 					return
 				}
-				log.Println("event: ", event)
+				if strings.HasSuffix(event.Name, "~") {
+					continue
+				}
+				// log.Println("event: ", event)
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					log.Println("modified file: ", event.Name)
+					// log.Println("modified file: ", event.Name)
 				}
 
 				p.Kill()
 				err = p.process.Wait()
 
-				log.Println("current process just terminated")
-
 				p = cmd.Run()
+				fmt.Println("Trying to run the command...")
 
 			case err, ok := <-watcher.Errors:
 				if !ok {
@@ -98,8 +68,29 @@ func main() {
 
 	err = watcher.Add(".")
 	if err != nil {
+		fmt.Println("[Error!] Can't watch the root directory.")
+	}
+
+	err = filepath.Walk(".", func(walkPath string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if fi.IsDir() {
+			// check if dot directory
+			if strings.HasPrefix(walkPath, ".") {
+				return nil
+			}
+			if err = watcher.Add(walkPath); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
 		log.Fatal(err)
 	}
 
 	wg.Wait()
+
+	p.Kill()
 }
