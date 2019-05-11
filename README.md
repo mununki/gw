@@ -10,6 +10,18 @@ A Wrapper of a command to watch any changes in filesystem, then re-run the comma
 
 ## How to install
 
+### Homebrew
+
+```shell
+$ brew install mattdamon108/tools/gw
+```
+
+### Using `go get`
+
+```shell
+$ go get -u github.com/mattdamon108/gw
+```
+
 ### Build with the source code
 
 1. Git clone
