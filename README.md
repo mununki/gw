@@ -55,7 +55,8 @@ Tyring to run the command...
 ```
 
 - node.js
-  You can use gw instead of nodemon.
+
+You can use gw instead of nodemon.
 
 ```shell
 $ gw node server.js
