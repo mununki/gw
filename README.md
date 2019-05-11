@@ -54,6 +54,19 @@ Tyring to run the command...
 2019/05/12 00:01:10 Listening to the port 8080...
 ```
 
+- node.js
+  You can use gw instead of nodemon.
+
+```shell
+$ gw node server.js
+** Ctrl-C to exit **
+Listening to port 4000
+
+# any changes in filesystem
+Tyring to run the command...
+Listening to port 4000
+```
+
 ## Next to do
 
 - [ ] error handling
