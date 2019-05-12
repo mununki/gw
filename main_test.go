@@ -29,8 +29,8 @@ MAIN:
 		select {
 		case event, ok := <-watcher.Events:
 			if !ok {
-				// break MAIN
-				continue
+				break MAIN
+				// why not? continue
 			}
 			log.Println("event:", event)
 			if event.Op&fsnotify.Write == fsnotify.Write {
@@ -39,8 +39,8 @@ MAIN:
 
 		case err, ok := <-watcher.Errors:
 			if !ok {
-				// break MAIN
-				continue
+				break MAIN
+				// why not? continue
 			}
 			log.Println("error:", err)
 
