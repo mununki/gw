@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 )
 
@@ -13,19 +13,14 @@ func main() {
 		log.Println(arg)
 	}
 
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-
 	sigs := make(chan os.Signal, 1)
-
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	go func() {
+MAIN:
+	for {
 		sig := <-sigs
 		log.Println(sig)
-		wg.Done()
-	}()
-
-	wg.Wait()
+		break MAIN
+	}
+	fmt.Println("runner terminated")
 }
