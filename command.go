@@ -42,9 +42,6 @@ func (c *Command) Run() (*Process, error) {
 				return &Process{process: cmd, pgid: &pgid}, nil
 			}
 
-			fmt.Println(`
-[ERROR!] Can't find a executed process id.
-		`)
 			return nil, fmt.Errorf("error to get a excuted process id")
 		}
 	} else {

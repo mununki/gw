@@ -28,6 +28,7 @@ func main() {
 	p, err := cmd.Run()
 	if err != nil {
 		wg.Done()
+		os.Exit(0)
 	}
 
 	fmt.Println("** Ctrl-C to exit **")
@@ -41,7 +42,8 @@ func main() {
 			case event, ok := <-watcher.Events:
 				if !ok {
 					wg.Done()
-					return
+					close(sigs)
+					os.Exit(0)
 				}
 				if strings.HasSuffix(event.Name, "~") {
 					continue
@@ -56,15 +58,18 @@ func main() {
 
 				p, err = cmd.Run()
 				if err != nil {
+					fmt.Println(err)
 					wg.Done()
-					return
+					close(sigs)
+					os.Exit(0)
 				}
 				fmt.Println("Trying to run the command...")
 
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					wg.Done()
-					return
+					close(sigs)
+					os.Exit(0)
 				}
 				log.Println("error: ", err)
 
