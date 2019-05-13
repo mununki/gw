@@ -15,13 +15,15 @@ type Command struct {
 }
 
 // Run func to run commands
-func (c *Command) Run() *Process {
+func (c *Command) Run() (*Process, error) {
 	if len(c.commands) > 1 {
 		if strings.HasPrefix(c.commands[1], "-") {
 			if c.commands[1] == "-v" {
 				fmt.Println(OptionVersion)
+				return nil, fmt.Errorf("version check")
 			} else if c.commands[1] == "-h" {
 				fmt.Println(OptionHelp)
+				return nil, fmt.Errorf("print help")
 			}
 		} else {
 			cmd := exec.Command(c.commands[1], c.commands[2:]...)
@@ -32,20 +34,22 @@ func (c *Command) Run() *Process {
 			err := cmd.Start()
 			if err != nil {
 				log.Fatal(err)
+				return nil, fmt.Errorf("can't run the command")
 			}
 
 			pgid, err := syscall.Getpgid(cmd.Process.Pid)
 			if err == nil {
-				return &Process{process: cmd, pgid: &pgid}
+				return &Process{process: cmd, pgid: &pgid}, nil
 			}
 
 			fmt.Println(`
 [ERROR!] Can't find a executed process id.
 		`)
+			return nil, fmt.Errorf("error to get a excuted process id")
 		}
 	} else {
 		fmt.Println(OptionHelp)
+		return nil, fmt.Errorf("no command to run")
 	}
-	os.Exit(0)
-	return nil
+	return nil, fmt.Errorf("unexpected error")
 }

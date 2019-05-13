@@ -7,17 +7,75 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/fsnotify/fsnotify"
 )
 
 func main() {
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer watcher.Close()
+
+	cmd := Command{commands: os.Args}
+	p, err := cmd.Run()
+	if err != nil {
+		wg.Done()
+	}
+
+	fmt.Println("** Ctrl-C to exit **")
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					wg.Done()
+					return
+				}
+				if strings.HasSuffix(event.Name, "~") {
+					continue
+				}
+				// log.Println("event: ", event)
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					// log.Println("modified file: ", event.Name)
+				}
+
+				p.Kill()
+				err = p.process.Wait()
+
+				p, err = cmd.Run()
+				if err != nil {
+					wg.Done()
+					return
+				}
+				fmt.Println("Trying to run the command...")
+
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					wg.Done()
+					return
+				}
+				log.Println("error: ", err)
+
+			}
+		}
+	}()
+
+	go func() {
+		<-sigs
+		wg.Done()
+	}()
 
 	err = watcher.Add(".")
 	if err != nil {
@@ -45,46 +103,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	cmd := Command{commands: os.Args}
-	p := cmd.Run()
-	fmt.Println("** Ctrl-C to exit **")
+	wg.Wait()
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-MAIN:
-	for {
-		select {
-		case event, ok := <-watcher.Events:
-			if !ok {
-				break MAIN
-			}
-			if strings.HasSuffix(event.Name, "~") {
-				continue
-			}
-			// log.Println("event: ", event)
-			if event.Op&fsnotify.Write == fsnotify.Write {
-				// log.Println("modified file: ", event.Name)
-			}
-
-			p.Kill()
-			err = p.process.Wait()
-
-			p = cmd.Run()
-			fmt.Println("Trying to run the command...")
-
-		case err, ok := <-watcher.Errors:
-			if !ok {
-				break MAIN
-			}
-			log.Println("error: ", err)
-
-		case signal := <-sigs:
-			if signal == os.Interrupt {
-				break MAIN
-			}
-		}
-	}
-
+	close(sigs)
 	p.Kill()
 }
