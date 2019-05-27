@@ -10,6 +10,7 @@ import (
 	"sync"
 	"syscall"
 
+	tm "github.com/buger/goterm"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -24,14 +25,17 @@ func main() {
 	}
 	defer watcher.Close()
 
+	tm.Clear()
+	tm.MoveCursor(1, 1)
+	tm.Println(tm.Color(tm.Bold("** Ctrl-C to exit **"), tm.RED))
+	tm.Flush()
+
 	cmd := Command{commands: os.Args}
 	p, err := cmd.Run()
 	if err != nil {
 		wg.Done()
 		os.Exit(0)
 	}
-
-	fmt.Println("** Ctrl-C to exit **")
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -63,7 +67,10 @@ func main() {
 					close(sigs)
 					os.Exit(0)
 				}
-				fmt.Println("Trying to run the command...")
+				tm.Clear()
+				tm.MoveCursor(1, 1)
+				tm.Println(tm.Color(tm.Bold("Trying to run the command..."), tm.GREEN))
+				tm.Flush()
 
 			case err, ok := <-watcher.Errors:
 				if !ok {
