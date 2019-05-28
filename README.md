@@ -8,6 +8,10 @@
 
 A Wrapper of a command to watch any changes in filesystem, then re-run the command again. Especially, when you are developing a backend API, you need to run again your API very often, every time you edit a code. `GW` will automatically run your API again for you.
 
+## Demo
+
+![demo](/demo/gw_demo.gif)
+
 ## How to use
 
 ```shell

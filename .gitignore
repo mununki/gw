@@ -1,3 +1,5 @@
 gw
 *.tar.gz
 test-run
+runner/
+demo/gw.yml
