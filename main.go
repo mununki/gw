@@ -15,15 +15,44 @@ import (
 )
 
 func main() {
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer watcher.Close()
+
+	err = watcher.Add(".")
+	if err != nil {
+		fmt.Println("[Error!] Can't watch the root directory.")
+		os.Exit(0)
+	}
+
+	err = filepath.Walk(".", func(walkPath string, fi os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if fi.IsDir() {
+			// check if dot directory
+			if strings.HasPrefix(walkPath, ".") {
+				return nil
+			}
+			if strings.HasPrefix(walkPath, "node_modules") {
+				return nil
+			}
+			if err = watcher.Add(walkPath); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(0)
+	}
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 
 	tm.Clear()
 	tm.MoveCursor(1, 1)
@@ -88,32 +117,6 @@ func main() {
 		<-sigs
 		wg.Done()
 	}()
-
-	err = watcher.Add(".")
-	if err != nil {
-		fmt.Println("[Error!] Can't watch the root directory.")
-		os.Exit(0)
-	}
-
-	err = filepath.Walk(".", func(walkPath string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if fi.IsDir() {
-			// check if dot directory
-			if strings.HasPrefix(walkPath, ".") {
-				return nil
-			}
-			if err = watcher.Add(walkPath); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(0)
-	}
 
 	wg.Wait()
 

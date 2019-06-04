@@ -30,7 +30,7 @@ Tyring to run the command...
 2019/05/12 00:01:10 Listening to the port 8080...
 ```
 
-- for node.js
+- for Node.js
 
 **You can use gw instead of `nodemon`.**
 
@@ -43,6 +43,8 @@ Listening to port 4000
 Tyring to run the command...
 Listening to port 4000
 ```
+
+> gw excludes to watch the `node_modules` directory.
 
 ## How to install
 
