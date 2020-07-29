@@ -15,6 +15,12 @@ import (
 )
 
 func main() {
+	cmd := Command{commands: os.Args}
+	if err := cmd.Check(); err != nil {
+		fmt.Println(err)
+		os.Exit(0)
+	}
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -23,7 +29,7 @@ func main() {
 
 	err = watcher.Add(".")
 	if err != nil {
-		fmt.Println("[Error!] Can't watch the root directory.")
+		log.Fatal(err)
 		os.Exit(0)
 	}
 
@@ -54,17 +60,17 @@ func main() {
 
 	wg.Add(1)
 
+	p, err := cmd.Run()
+	if err != nil {
+		fmt.Println(err)
+		wg.Done()
+		os.Exit(0)
+	}
+
 	tm.Clear()
 	tm.MoveCursor(1, 1)
 	tm.Println(tm.Color(tm.Bold("** Ctrl-C to exit **"), tm.RED))
 	tm.Flush()
-
-	cmd := Command{commands: os.Args}
-	p, err := cmd.Run()
-	if err != nil {
-		wg.Done()
-		os.Exit(0)
-	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

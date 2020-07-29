@@ -21,5 +21,5 @@ e.g.
 
 // OptionVersion of -v
 const OptionVersion string = `
-Go Watcher v0.5.0
+Go Watcher v0.5.1
 `
