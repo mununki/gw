@@ -1,9 +1,9 @@
-module github.com/mattdamon108/gomon
+module github.com/mattdamon108/gw
 
 go 1.12
 
 require (
-	github.com/buger/goterm v0.0.0-20181115115552-c206103e1f37
-	github.com/fsnotify/fsnotify v1.4.7
-	golang.org/x/sys v0.0.0-20190508220229-2d0786266e9c // indirect
+	github.com/buger/goterm v1.0.0
+	github.com/fsnotify/fsnotify v1.4.9
+	golang.org/x/sys v0.0.0-20210507161434-a76c4d0a0096 // indirect
 )
