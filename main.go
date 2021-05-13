@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"os/signal"
@@ -32,10 +33,10 @@ func main() {
 		log.Fatal(err)
 		os.Exit(0)
 	}
-
-	err = filepath.Walk(".", func(walkPath string, fi os.FileInfo, err error) error {
+	err = filepath.WalkDir(".", func(walkPath string, fi fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			log.Println(err)
+			return nil
 		}
 		if fi.IsDir() {
 			// check if dot directory
@@ -46,14 +47,15 @@ func main() {
 				return nil
 			}
 			if err = watcher.Add(walkPath); err != nil {
-				return err
+				log.Println(err)
+				return nil
+				// return err
 			}
 		}
 		return nil
 	})
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(0)
+		log.Println(err)
 	}
 
 	var wg sync.WaitGroup
