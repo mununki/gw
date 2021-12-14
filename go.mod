@@ -1,4 +1,4 @@
-module github.com/mattdamon108/gw
+module github.com/cauefcr/gw
 
 go 1.12
 
