@@ -44,7 +44,7 @@ Tyring to run the command...
 Listening to port 4000
 ```
 
-> gw excludes to watch the `node_modules` directory.
+> gw supports gitignore
 
 ## How to install
 

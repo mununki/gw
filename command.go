@@ -1,52 +1,43 @@
 package main
 
 import (
-	"fmt"
-	// "log"
-	"os"
+	"errors"
+	"io"
 	"os/exec"
-	"strings"
-	"syscall"
 )
 
-// Command struct for commands
-type Command struct {
-	commands []string
+type Shell struct {
+	Proc   *exec.Cmd
+	Stdin  io.WriteCloser
+	Stdout io.ReadCloser
+	Stderr io.ReadCloser
 }
 
-func (c *Command) Check() error {
-	if len(c.commands) > 1 {
-		if strings.HasPrefix(c.commands[1], "-") {
-			if c.commands[1] == "-v" {
-				// fmt.Println(OptionVersion)
-				return fmt.Errorf(OptionVersion)
-			} else if c.commands[1] == "-h" {
-				// fmt.Println(OptionHelp)
-				return fmt.Errorf(OptionHelp)
-			}
-		} else {
-			return nil
-		}
+// from "github.com/kylefeng28/go-shell"
+func NewShell(command string) (Shell, error) {
+	var err error
+
+	shell := Shell{}
+	shell.Proc = exec.Command(command)
+	if shell.Stdin, err = shell.Proc.StdinPipe(); err != nil {
+		return shell, errors.New("could not get a pipe to stdin")
 	}
-	return fmt.Errorf(OptionHelp)
+	if shell.Stdout, err = shell.Proc.StdoutPipe(); err != nil {
+		return shell, errors.New("could not get a pipe to stdout")
+	}
+	if shell.Stderr, err = shell.Proc.StderrPipe(); err != nil {
+		return shell, errors.New("could not get a pipe to stderr")
+	}
+
+	if err = shell.Proc.Start(); err != nil {
+		return shell, errors.New("could not start process")
+	}
+
+	return shell, nil
 }
 
-// Run func to run commands
-func (c *Command) Run() (*Process, error) {
-	cmd := exec.Command(c.commands[1], c.commands[2:]...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Dir = "."
-	err := cmd.Start()
-	if err != nil {
-		return nil, fmt.Errorf(err.Error())
-	}
-
-	pgid, err := syscall.Getpgid(cmd.Process.Pid)
-	if err != nil {
-		return nil, fmt.Errorf(err.Error())
-	}
-
-	return &Process{process: cmd, pgid: &pgid}, nil
+func (shell Shell) Close() error {
+	shell.Stdout.Close()
+	shell.Stderr.Close()
+	return shell.Proc.Process.Kill()
 }
